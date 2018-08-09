@@ -81,7 +81,7 @@ def train_lstm():
                 
                 if step%10==0:
                     print("Number of iterations:",i," loss:",loss_)
-                    print("model_save",saver.save(sess,'model_save1\\modle.ckpt'))
+                    print("model_save",saver.save(sess,'model_save1/modle.ckpt'))
                     #I run the code in windows 10,so use  'model_save1\\modle.ckpt'
                     #if you run it in Linux,please use  'model_save1/modle.ckpt'
                 step+=1
@@ -94,7 +94,7 @@ def prediction():
         pred,_=lstm(1)    
     saver=tf.train.Saver(tf.global_variables())
     with tf.Session() as sess:
-        saver.restore(sess, 'model_save1\\modle.ckpt') 
+        saver.restore(sess, 'model_save1/modle.ckpt') 
         #I run the code in windows 10,so use  'model_save1\\modle.ckpt'
         #if you run it in Linux,please use  'model_save1/modle.ckpt'
         prev_seq=train_x[-1]

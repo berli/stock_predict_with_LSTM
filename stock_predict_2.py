@@ -8,29 +8,38 @@ import tensorflow as tf
 rnn_unit=10       #隐层数量
 input_size=7
 output_size=1
-lr=0.0006         #学习率
+lr=0.0003        #学习率
 #——————————————————导入数据——————————————————————
 f=open('dataset_2.csv')
 df=pd.read_csv(f)     #读入股票数据
 data=df.iloc[:,2:10].values  #取第3-10列
-
-
+'''
+plt.figure()
+plt.plot(data)
+plt.show()
+'''
 #获取训练集
 def get_train_data(batch_size=60,time_step=20,train_begin=0,train_end=5800):
     batch_index=[]
     data_train=data[train_begin:train_end]
-    normalized_train_data=(data_train-np.mean(data_train,axis=0))/np.std(data_train,axis=0)  #标准化
+    #标准化 Z-Score方法
+    #np.mean(data_train,axis=0)计算每一列的均值
+    #np.std(data_train,axis=0)每列的标准差
+    normalized_train_data=(data_train-np.mean(data_train,axis=0))/np.std(data_train,axis=0)  
+    print "normalized_train_data:\n",normalized_train_data
+
     train_x,train_y=[],[]   #训练集
     for i in range(len(normalized_train_data)-time_step):
        if i % batch_size==0:
            batch_index.append(i)
+
        x=normalized_train_data[i:i+time_step,:7]
        y=normalized_train_data[i:i+time_step,7,np.newaxis]
        train_x.append(x.tolist())
        train_y.append(y.tolist())
     batch_index.append((len(normalized_train_data)-time_step))
-    return batch_index,train_x,train_y
 
+    return batch_index,train_x,train_y
 
 #获取测试集
 def get_test_data(time_step=20,test_begin=5800):
@@ -38,6 +47,7 @@ def get_test_data(time_step=20,test_begin=5800):
     mean=np.mean(data_test,axis=0)
     std=np.std(data_test,axis=0)
     normalized_test_data=(data_test-mean)/std  #标准化
+
     size=(len(normalized_test_data)+time_step-1)//time_step  #有size个sample
     test_x,test_y=[],[]
     for i in range(size-1):
@@ -87,6 +97,7 @@ def train_lstm(batch_size=60,time_step=20,train_begin=2000,train_end=5800):
     X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
     Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
     batch_index,train_x,train_y=get_train_data(batch_size,time_step,train_begin,train_end)
+
     with tf.variable_scope("sec_lstm"):
         pred,_=lstm(X)
     loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
@@ -95,11 +106,11 @@ def train_lstm(batch_size=60,time_step=20,train_begin=2000,train_end=5800):
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        for i in range(10):     #这个迭代次数，可以更改，越大预测效果会更好，但需要更长时间
+        for i in range(1000):     #这个迭代次数，可以更改，越大预测效果会更好，但需要更长时间
             for step in range(len(batch_index)-1):
                 _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
             print("Number of iterations:",i," loss:",loss_)
-        print("model_save: ",saver.save(sess,'model_save2\\modle.ckpt'))
+        print("model_save: ",saver.save(sess,'model_save2/modle.ckpt'))
         #I run the code on windows 10,so use  'model_save2\\modle.ckpt'
         #if you run it on Linux,please use  'model_save2/modle.ckpt'
         print("The train has finished")
@@ -121,10 +132,11 @@ def prediction(time_step=20):
           prob=sess.run(pred,feed_dict={X:[test_x[step]]})
           predict=prob.reshape((-1))
           test_predict.extend(predict)
+
         test_y=np.array(test_y)*std[7]+mean[7]
         test_predict=np.array(test_predict)*std[7]+mean[7]
         acc=np.average(np.abs(test_predict-test_y[:len(test_predict)])/test_y[:len(test_predict)])  #偏差程度
-        print("The accuracy of this predict:",acc)
+        print("The accuracy of this predict:",1-acc)
         #以折线图表示结果
         plt.figure()
         plt.plot(list(range(len(test_predict))), test_predict, color='b',)
