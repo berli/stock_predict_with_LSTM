@@ -19,16 +19,20 @@ plt.plot(data)
 plt.show()
 '''
 #获取训练集
+#batch_size 每批训练大小
 def get_train_data(batch_size=60,time_step=20,train_begin=0,train_end=5800):
     batch_index=[]
     data_train=data[train_begin:train_end]
-    #标准化 Z-Score方法
-    #np.mean(data_train,axis=0)计算每一列的均值
-    #np.std(data_train,axis=0)每列的标准差
+    '''
+    标准化 Z-Score方法
+    np.mean(data_train,axis=0)计算每一列的均值
+    np.std(data_train,axis=0)每列的标准差
+    '''
     normalized_train_data=(data_train-np.mean(data_train,axis=0))/np.std(data_train,axis=0)  
     print "normalized_train_data:\n",normalized_train_data
 
-    train_x,train_y=[],[]   #训练集
+    #训练集
+    train_x,train_y=[],[]  
     for i in range(len(normalized_train_data)-time_step):
        if i % batch_size==0:
            batch_index.append(i)
@@ -37,6 +41,7 @@ def get_train_data(batch_size=60,time_step=20,train_begin=0,train_end=5800):
        y=normalized_train_data[i:i+time_step,7,np.newaxis]
        train_x.append(x.tolist())
        train_y.append(y.tolist())
+
     batch_index.append((len(normalized_train_data)-time_step))
 
     return batch_index,train_x,train_y
@@ -96,17 +101,23 @@ def lstm(X):
 def train_lstm(batch_size=60,time_step=20,train_begin=2000,train_end=5800):
     X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
     Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
+
+    #获取训练数据
     batch_index,train_x,train_y=get_train_data(batch_size,time_step,train_begin,train_end)
 
     with tf.variable_scope("sec_lstm"):
-        pred,_=lstm(X)
+        pred,_ = lstm(X)
     loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+
+    #Adm梯度优化算法
     train_op=tf.train.AdamOptimizer(lr).minimize(loss)
     saver=tf.train.Saver(tf.global_variables(),max_to_keep=15)
 
     with tf.Session() as sess:
+        #初始化全局变量
         sess.run(tf.global_variables_initializer())
-        for i in range(5000):     #这个迭代次数，可以更改，越大预测效果会更好，但需要更长时间
+        #迭代次数，一般越大预测效果会更好
+        for i in range(5000):  
             for step in range(len(batch_index)-1):
                 _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
             print("Number of iterations:",i," loss:",loss_)
@@ -114,6 +125,7 @@ def train_lstm(batch_size=60,time_step=20,train_begin=2000,train_end=5800):
         #I run the code on windows 10,so use  'model_save2\\modle.ckpt'
         #if you run it on Linux,please use  'model_save2/modle.ckpt'
         print("The train has finished")
+
 train_lstm()
 
 #————————————————预测模型————————————————————
@@ -144,3 +156,4 @@ def prediction(time_step=20):
         plt.show()
 
 prediction()
+
