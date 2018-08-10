@@ -31,14 +31,18 @@ def get_train_data(batch_size=60,time_step=20,train_begin=0,train_end=5800):
     normalized_train_data=(data_train-np.mean(data_train,axis=0))/np.std(data_train,axis=0)  
     print "normalized_train_data:\n",normalized_train_data
 
+    print "================"
     #训练集
     train_x,train_y=[],[]  
+    c = 0;
     for i in range(len(normalized_train_data)-time_step):
        if i % batch_size==0:
            batch_index.append(i)
-
+       
+       #为什么这样做？而且中间有7个重合的数据？？？
        x=normalized_train_data[i:i+time_step,:7]
        y=normalized_train_data[i:i+time_step,7,np.newaxis]
+       #变成list是干啥？？？
        train_x.append(x.tolist())
        train_y.append(y.tolist())
 
@@ -48,17 +52,23 @@ def get_train_data(batch_size=60,time_step=20,train_begin=0,train_end=5800):
 
 #获取测试集
 def get_test_data(time_step=20,test_begin=5800):
+    #取begin后面的数据
     data_test=data[test_begin:]
+    #计算每一列的均值
     mean=np.mean(data_test,axis=0)
+    #计算每一列的标准差
     std=np.std(data_test,axis=0)
-    normalized_test_data=(data_test-mean)/std  #标准化
+    #标准化
+    normalized_test_data=(data_test-mean)/std 
 
-    size=(len(normalized_test_data)+time_step-1)//time_step  #有size个sample
+    #有size个sample
+    size=(len(normalized_test_data)+time_step-1)//time_step 
     test_x,test_y=[],[]
     for i in range(size-1):
-       x=normalized_test_data[i*time_step:(i+1)*time_step,:7]
-       y=normalized_test_data[i*time_step:(i+1)*time_step,7]
+       x=normalized_test_data[ i*time_step:(i+1)*time_step, :7]
+       y=normalized_test_data[ i*time_step:(i+1)*time_step, 7]
        test_x.append(x.tolist())
+       #是extennd,不是append
        test_y.extend(y)
     test_x.append((normalized_test_data[(i+1)*time_step:,:7]).tolist())
     test_y.extend((normalized_test_data[(i+1)*time_step:,7]).tolist())
@@ -84,8 +94,10 @@ def lstm(X):
     time_step=tf.shape(X)[1]
     w_in=weights['in']
     b_in=biases['in']
+
     input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
     input_rnn=tf.matmul(input,w_in)+b_in
+
     input_rnn=tf.reshape(input_rnn,[-1,time_step,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
     cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
     init_state=cell.zero_state(batch_size,dtype=tf.float32)
