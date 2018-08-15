@@ -20,7 +20,7 @@ plt.figure()
 plt.plot(data)
 plt.show()
 '''
-#获取训练集
+#——————————————————获取训练集———————————————————————
 #batch_size 每批训练大小
 def get_train_data(batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
     batch_index = []
@@ -53,25 +53,30 @@ def get_train_data(batch_size = 60,time_step = 20,train_begin = 0,train_end = 58
 
     return batch_index,train_x,train_y
 
-#获取测试集
-def get_test_data(time_step = 20,test_begin = 5800):
+#————————————————————获取测试集——————————————————————
+def get_test_data(time_step = 20, train_begin = 0, train_end = 5800):
     #取begin后面的数据
+    test_begin = train_end
     data_test = data[test_begin:]
+    data_train = data[train_begin:train_end]
     #计算每一列的均值
     mean = np.mean(data_test,axis = 0)
+    #mean = np.mean(data_train, axis = 0)
     #计算每一列的标准差
     std = np.std(data_test,axis = 0)
+    #std = np.std(data_train,axis = 0)
     #标准化 z-score算法
     normalized_test_data = (data_test-mean)/std 
 
     #有size个sample
-    #size = (len(normalized_test_data) + time_step-1)//time_step 
     size = (len(normalized_test_data) + time_step)//time_step 
 
     test_x,test_y = [],[]
 
     for i in range(size - 1 ):
+       #前面7列特征数据
        x = normalized_test_data[ i*time_step:(i+1)*time_step, :7]
+       #第7列标签
        y = normalized_test_data[ i*time_step:(i+1)*time_step, 7]
 
        test_x.append(x.tolist())
@@ -136,7 +141,7 @@ def lstm(X):
 
     return pred,final_states
 
-#————————————————训练模型————————————————————
+#————————————————训练数据————————————————————
 
 def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 5800):
     X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
@@ -147,6 +152,7 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 580
 
     with tf.variable_scope("my_lstm"):
         pred,_  =  lstm(X)
+
     #降维求均值
     loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1])- tf.reshape(Y, [-1])))
 
@@ -158,34 +164,32 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 580
         #初始化全局变量
         sess.run(tf.global_variables_initializer())
         #迭代次数，一般越大预测效果会更好
-        for i in range(5000):  
+        for i in range(10000):  
             for step in range(len(batch_index)-1):
-                _, loss_ = sess.run([train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
+                _, loss_ = sess.run([train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]], Y:train_y[batch_index[step]:batch_index[step+1]]})
             print("Number of iterations:",i," loss:",loss_)
-        print("model_save: ",saver.save(sess, 'model2/model.ckpt'))
+        print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
         print("The train has finished")
 
-train_lstm()
-
-#————————————————预测模型————————————————————
+#————————————————预测数据————————————————————
 def eval_lstm(time_step = 20):
     X = tf.placeholder(tf.float32, shape = [None, time_step, input_size])
     mean, std, test_x, test_y = get_test_data( time_step )
-
+    
+    #共享lstm()函数中定义的权重参数
     with tf.variable_scope("my_lstm", reuse = True):
         pred, _ = lstm(X)
 
     saver = tf.train.Saver( tf.global_variables() )
     with tf.Session() as sess:
-        #参数恢复
-        module_file  =  tf.train.latest_checkpoint('model2')
+        #读取刚才训练好的模型参数
+        module_file  =  tf.train.latest_checkpoint('model')
         saver.restore(sess, module_file)
         test_predict = []
 
         for step in range(len(test_x)-1):
           prob = sess.run(pred, feed_dict = { X:[ test_x[ step ] ] } )
           #reshape((-1))把prob变成一维
-          #predict = prob.reshape((-1))
           predict = prob[-1].reshape((-1))
 
           #保存本次的预测结果
@@ -193,6 +197,7 @@ def eval_lstm(time_step = 20):
 
         test_y = np.array(test_y)*std[7] + mean[7]
         test_predict = np.array(test_predict)*std[7]+mean[7]
+
         acc = np.average(np.abs(test_predict-test_y[:len(test_predict)])/test_y[:len(test_predict)])  #偏差程度
         print("The accuracy of this predict:",1-acc)
         #以折线图表示结果
@@ -201,5 +206,9 @@ def eval_lstm(time_step = 20):
         plt.plot(list(range(len(test_y))), test_y,  color = 'r')
         plt.show()
 
-eval_lstm()
+if __name__ == "__main__":
+    #训练数据
+    train_lstm()
+    #预测数据
+    eval_lstm()
 
