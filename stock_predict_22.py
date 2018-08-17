@@ -59,13 +59,14 @@ def get_test_data(time_step = 20, train_begin = 0, train_end = 5800):
     test_begin = train_end
     data_test = data[test_begin:]
     data_train = data[train_begin:train_end]
+
     #计算每一列的均值
     mean = np.mean(data_test,axis = 0)
-    #mean = np.mean(data_train, axis = 0)
+
     #计算每一列的标准差
     std = np.std(data_test,axis = 0)
-    #std = np.std(data_train,axis = 0)
-    #标准化 z-score算法
+
+    #归一化使用z-score算法
     normalized_test_data = (data_test-mean)/std 
 
     #有size个sample
@@ -164,7 +165,7 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 580
         #初始化全局变量
         sess.run(tf.global_variables_initializer())
         #迭代次数，一般越大预测效果会更好
-        for i in range(10000):  
+        for i in range(5000):  
             for step in range(len(batch_index)-1):
                 _, loss_ = sess.run([train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]], Y:train_y[batch_index[step]:batch_index[step+1]]})
             print("Number of iterations:",i," loss:",loss_)
@@ -190,16 +191,20 @@ def eval_lstm(time_step = 20):
         for step in range(len(test_x)-1):
           prob = sess.run(pred, feed_dict = { X:[ test_x[ step ] ] } )
           #reshape((-1))把prob变成一维
-          predict = prob[-1].reshape((-1))
+          predict = prob.reshape((-1))
+          #predict = prob[-1].reshape((-1))
 
           #保存本次的预测结果
           test_predict.extend(predict)
 
         test_y = np.array(test_y)*std[7] + mean[7]
-        test_predict = np.array(test_predict)*std[7]+mean[7]
+        #还原到实际数据
+        test_predict = np.array(test_predict)*std[7] + mean[7]
+ 
+        #偏差程度
+        offset = np.average(np.abs(test_predict - test_y[:len(test_predict)])/test_y[:len(test_predict)]) 
+        print("The accuracy of this predict:",1 - offset)
 
-        acc = np.average(np.abs(test_predict-test_y[:len(test_predict)])/test_y[:len(test_predict)])  #偏差程度
-        print("The accuracy of this predict:",1-acc)
         #以折线图表示结果
         plt.figure()
         plt.plot(list(range(len(test_predict))), test_predict, color = 'b',)

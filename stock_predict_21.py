@@ -165,8 +165,6 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 580
         print("model_save: ",saver.save(sess, 'model2/model.ckpt'))
         print("The train has finished")
 
-train_lstm()
-
 #————————————————预测模型————————————————————
 def eval_lstm(time_step = 20):
     X = tf.placeholder(tf.float32, shape = [None, time_step, input_size])
@@ -185,8 +183,8 @@ def eval_lstm(time_step = 20):
         for step in range(len(test_x)-1):
           prob = sess.run(pred, feed_dict = { X:[ test_x[ step ] ] } )
           #reshape((-1))把prob变成一维
-          #predict = prob.reshape((-1))
-          predict = prob[-1].reshape((-1))
+          predict = prob.reshape((-1))
+          #predict = prob[-1].reshape((-1))
 
           #保存本次的预测结果
           test_predict.extend(predict)
@@ -201,5 +199,10 @@ def eval_lstm(time_step = 20):
         plt.plot(list(range(len(test_y))), test_y,  color = 'r')
         plt.show()
 
-eval_lstm()
+
+if __name__ == "__main__":
+    #训练数据
+    train_lstm()
+    #预测数据
+    eval_lstm()
 
