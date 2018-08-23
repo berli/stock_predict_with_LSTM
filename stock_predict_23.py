@@ -8,7 +8,7 @@ import tensorflow as tf
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 
 lstm_num_units = 10  #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少
-input_size = 7       #特征数量
+input_size = 7
 output_size = 1
 lr = 0.0003      #学习率
 
@@ -43,9 +43,9 @@ def get_train_data(batch_size = 60,time_step = 20,train_begin = 0,train_end = 58
            batch_index.append(i)
        
        #取time_step个时间序列数据, 取前面7列数据
-       x = normalized_train_data[i:i+time_step,:input_size]
+       x = normalized_train_data[i:i+time_step,:7]
        #取time_step个时间序列数据, 第7列数据,np.newaxis增加一个维度
-       y = normalized_train_data[i:i+time_step, input_size, np.newaxis]
+       y = normalized_train_data[i:i+time_step,7,np.newaxis]
        #变成list是干啥？？？
        train_x.append(x.tolist())
        train_y.append(y.tolist())
@@ -62,10 +62,12 @@ def get_test_data(time_step = 20, train_begin = 0, train_end = 5800):
     data_train = data[train_begin:train_end]
 
     #计算每一列的均值
-    mean = np.mean(data_test,axis = 0)
+    #mean = np.mean(data_test,axis = 0)
+    mean = np.mean(data_train,axis = 0)
 
     #计算每一列的标准差
-    std = np.std(data_test,axis = 0)
+    #std = np.std(data_test,axis = 0)
+    std = np.std(data_train,axis = 0)
 
     #归一化使用z-score算法
     normalized_test_data = (data_test-mean)/std 
@@ -75,18 +77,24 @@ def get_test_data(time_step = 20, train_begin = 0, train_end = 5800):
 
     test_x,test_y = [],[]
 
-    for i in range(size - 1 ):
+    #for i in range(size - 1 ):
+    for i in range( len(normalized_test_data) - time_step ):
        #前面7列特征数据
-       x = normalized_test_data[ i*time_step:(i+1)*time_step, :input_size]
+       #x = normalized_test_data[ i*time_step:(i+1)*time_step, :7]
+       x = normalized_test_data[i:(i+time_step),:7]
        #第7列标签
-       y = normalized_test_data[ i*time_step:(i+1)*time_step, input_size]
+       #y = normalized_test_data[ i*time_step:(i+1)*time_step, 7]
+       #取第(1+20)做预测值 
+       y = normalized_test_data[i+time_step,7]
+       print 'len(y),type(y):',y,len(y)
 
        test_x.append(x.tolist())
        #是extennd,不是append
-       test_y.extend(y)
+       #test_y.extend(y)
+       test_y.append(y)
 
-    test_x.append((normalized_test_data[(i+1)*time_step:,:input_size]).tolist())
-    test_y.extend((normalized_test_data[(i+1)*time_step:,input_size]).tolist())
+    #test_x.append((normalized_test_data[(i+1)*time_step:,:7]).tolist())
+    #test_y.extend((normalized_test_data[(i+1)*time_step:,7]).tolist())
 
     return mean,std,test_x,test_y
 
@@ -189,20 +197,21 @@ def eval_lstm(time_step = 20):
         saver.restore(sess, module_file)
         test_predict = []
 
-        for step in range(len(test_x)-1):
+        #for step in range(len(test_x)-1):
+        for step in range(len(test_x)):
           prob = sess.run(pred, feed_dict = { X:[ test_x[ step ] ] } )
+    
           #reshape((-1))把prob变成一维
-          predict = prob.reshape((-1))
+          #predict = prob.reshape((-1))
+          predict=prob[-1].reshape((-1))
 
           #保存本次的预测结果
           test_predict.extend(predict)
 
-        test_y = np.array(test_y)*std[input_size] + mean[input_size]
-        #今天的数据，是明天的结果,把标签提前一个
-        #test_y = test_y[1:]
+        test_y = np.array(test_y)*std[7] + mean[7]
 
         #还原到实际数据
-        test_predict = np.array(test_predict)*std[input_size] + mean[input_size]
+        test_predict = np.array(test_predict)*std[7] + mean[7]
  
         #偏差程度
         rmse = np.average(np.abs(test_predict - test_y[:len(test_predict)]) / test_y[:len(test_predict)]) 
@@ -216,6 +225,8 @@ def eval_lstm(time_step = 20):
         #验证标签用红线表示
         plt.plot(list(range(len(test_y))), test_y, label='test', color = 'r')
         plt.legend()
+        #plt.xlabel('时间序列')
+        #plt.ylabel('标签值')
         plt.show()
 
 if __name__ == "__main__":
