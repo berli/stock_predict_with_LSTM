@@ -145,7 +145,7 @@ def lstm(X):
 
 #————————————————训练数据————————————————————
 
-def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 5800):
+def train_lstm(batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
     X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
     Y = tf.placeholder(tf.float32, shape = [None,time_step,output_size])
 
@@ -162,7 +162,9 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 2000,train_end = 580
     train_op = tf.train.AdamOptimizer(lr).minimize(loss)
     saver = tf.train.Saver(tf.global_variables(),max_to_keep = 15)
 
-    with tf.Session() as sess:
+    gpu_options = tf.GPUOptions(allow_growth=True)
+    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+    #with tf.Session() as sess:
         #初始化全局变量
         sess.run(tf.global_variables_initializer())
         #迭代次数，一般越大预测效果会更好

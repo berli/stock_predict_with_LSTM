@@ -11,7 +11,8 @@ lstm_num_units = 10  #LSTM每个单元中的单元数量，用来指有多少个
 input_size = 7
 output_size = 1
 lr = 0.0003      #学习率
-
+TRAIN_GEGIN = 5800
+TRAIN_END   = 5800
 #——————————————————导入数据——————————————————————
 f = open('dataset_2.csv')
 df = pd.read_csv(f)     #读入股票数据
