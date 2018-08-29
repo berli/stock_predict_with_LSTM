@@ -233,7 +233,7 @@ class rnn_lstm:
             plt.show()
 
 if __name__ == "__main__":
-    data_file = 'dataset_2.csv'
+    data_file = 'stock_data.csv'
     for i in range(1, len(sys.argv)):
         data_file = argv[i];
         break;
