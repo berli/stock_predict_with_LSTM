@@ -168,7 +168,7 @@ def train_lstm(batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
         #初始化全局变量
         sess.run(tf.global_variables_initializer())
         #迭代次数，一般越大预测效果会更好
-        for i in range(5000):  
+        for i in range(5):  
             for step in range(len(batch_index)-1):
                 _, loss_ = sess.run([train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]], Y:train_y[batch_index[step]:batch_index[step+1]]})
             print("Number of iterations:",i," loss:",loss_)
@@ -217,7 +217,8 @@ def eval_lstm(time_step = 20):
         plt.plot(list(range(len(test_predict))), test_predict, label='predict',color = 'b',)
         #验证标签用红线表示
         plt.plot(list(range(len(test_y))), test_y, label='test', color = 'r')
-        plt.legend()
+        plt.legend(loc= 'upper right', fontsize= 10)
+        plt.savefig("./trend.png")
         plt.show()
 
 if __name__ == "__main__":

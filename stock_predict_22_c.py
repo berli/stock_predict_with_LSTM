@@ -228,7 +228,8 @@ class rnn_lstm:
             plt.plot(list(range(len(test_predict))), test_predict, label='predict',color = 'b',)
             #验证标签用红线表示
             plt.plot(list(range(len(test_y))), test_y, label='test', color = 'r')
-            plt.legend()
+            plt.legend(loc= 'upper right', fontsize= 10)
+            plt.savefig("./trend.png")
             plt.show()
 
 if __name__ == "__main__":
