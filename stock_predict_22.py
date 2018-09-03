@@ -13,8 +13,7 @@ output_size = 1
 lr = 0.0003      #学习率
 
 #——————————————————导入数据——————————————————————
-f = open('stock_data.csv')
-df = pd.read_csv(f)     #读入股票数据
+df = pd.read_csv('stock_data.csv')     #读入股票数据
 data = df.iloc[:,2:10].values  #前闭后开,取第[3,10)列
 '''
 plt.figure()
