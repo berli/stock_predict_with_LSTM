@@ -8,7 +8,7 @@ import tensorflow as tf
 import sys
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 
-lstm_num_units = 10  #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少
+lstm_num_units = 10  #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少 hidden_dim
 input_size = 7       #特征数量
 output_size = 1
 lr = 0.0003      #学习率
@@ -17,7 +17,7 @@ class rnn_lstm:
     def __init__(self, data_file):
         #——————————————————导入数据——————————————————————
         if( len(data_file) == 0):
-            data_file = 'dataset_2.csv'
+            data_file = 'stock_data.csv'
         df = pd.read_csv(data_file)     #读入股票数据
         self.data = df.iloc[:,2:10].values  #前闭后开,取第[3,10)列
         self.TRAIN_END= int(len(self.data)*0.8);
@@ -97,6 +97,7 @@ class rnn_lstm:
     
         test_x,test_y = [],[]
     
+        i = 0;
         for i in range(size - 1 ):
            #前面7列特征数据
            x = normalized_test_data[ i*time_step:(i+1)*time_step, :input_size]
@@ -124,7 +125,7 @@ class rnn_lstm:
         #将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
         input  =  tf.reshape(X,[-1,input_size])  
         inputs_data  =  tf.matmul(input, w_in) + b_in
-    
+        
         #将tensor转成3维，作为lstm cell的输入
         inputs_data  =  tf.reshape(inputs_data, [-1, time_step, lstm_num_units] ) 
     
@@ -140,7 +141,8 @@ class rnn_lstm:
     
         #https://www.tensorflow.org/api_docs/python/tf/nn/dynamic_rnn
         #cell: BasicLSTMCell，BasicRNNCell，GRUCell 的对象实例，自己定义的cell 内容
-        #inputs:如果是time_major=True，input的维度是[max_time, batch_size, input_size]，反之就是[batch_size, max_time, input_zise]；
+        #inputs_data:LSTM要处理的数据 如果是time_major=True，input的维度是[max_time, batch_size, input_size]，反之就是[batch_size, max_time, input_zise]；
+        #time_major 默认是False
         #return: output_rnn里面，包含了所有时刻的输出H
         #        final_states里面，包含了最后一个时刻的输出 H 和 C；
         output_rnn,final_states = tf.nn.dynamic_rnn(cell, inputs_data,initial_state = init_state, dtype = tf.float32)
@@ -191,7 +193,7 @@ class rnn_lstm:
         mean, std, test_x, test_y = self.get_test_data( time_step )
         
         #共享lstm()函数中定义的权重参数
-        with tf.variable_scope("my_lstm", reuse = True):
+        with tf.variable_scope("my_lstm", reuse = tf.AUTO_REUSE):
             pred, _ = self.lstm(X)
     
         saver = tf.train.Saver( tf.global_variables() )
@@ -208,7 +210,7 @@ class rnn_lstm:
     
               #保存本次的预测结果
               test_predict.extend(predict)
-    
+   
             test_y = np.array(test_y)*std[input_size] + mean[input_size]
             #今天的数据，是明天的结果,把标签提前一个
             #test_y = test_y[1:]
