@@ -7,13 +7,11 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import sys
 from sklearn.metrics import mean_absolute_error,mean_squared_error
-import getopt as opt
 
 lstm_num_units = 10  #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少 hidden_dim
 input_size = 7       #特征数量
 output_size = 1
 lr = 0.0003      #学习率
-summary_total = 200
 
 class rnn_lstm:
     def __init__(self, data_file):
@@ -31,12 +29,11 @@ class rnn_lstm:
         #——————————————————定义权重和偏置参数——————————————————
         
         #输入层、输出层, 权重、偏置
-        with tf.name_scope("weights"):
-            self.weights = {
+        self.weights = {
                  'in':tf.Variable(tf.random_normal([input_size, lstm_num_units])),
                  'out':tf.Variable(tf.random_normal([lstm_num_units, 1]))
                 }
-            self.biases = {
+        self.biases = {
                 'in':tf.Variable(tf.constant(0.1, shape = [lstm_num_units,])),
                 'out':tf.Variable(tf.constant(0.1, shape = [1,]))
                }
@@ -120,19 +117,17 @@ class rnn_lstm:
     #——————————————————实现lstm神经网络——————————————————
     def lstm(self, X):
         
-        with tf.name_scope("weights"):
-            batch_size = tf.shape(X)[0]
-            time_step = tf.shape(X)[1]
-            w_in = self.weights['in']
-            b_in = self.biases['in']
+        batch_size = tf.shape(X)[0]
+        time_step = tf.shape(X)[1]
+        w_in = self.weights['in']
+        b_in = self.biases['in']
         
-        with tf.name_scope("inputs"):
-            #将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
-            input  =  tf.reshape(X,[-1,input_size])  
-            inputs_data  =  tf.matmul(input, w_in) + b_in
-            
-            #将tensor转成3维，作为lstm cell的输入
-            inputs_data  =  tf.reshape(inputs_data, [-1, time_step, lstm_num_units] ) 
+        #将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
+        input  =  tf.reshape(X,[-1,input_size])  
+        inputs_data  =  tf.matmul(input, w_in) + b_in
+        
+        #将tensor转成3维，作为lstm cell的输入
+        inputs_data  =  tf.reshape(inputs_data, [-1, time_step, lstm_num_units] ) 
     
         #num_units: 输出维度,图一中ht的维数，如果num_units=10,那么ht就是10维行向量, 官方解释:int, The number of units in the LSTM cell.
         #forget_bias：遗忘门的初始化偏置,默认是1.0，都不忘记, 0:都忘记
@@ -152,26 +147,19 @@ class rnn_lstm:
         #        final_states里面，包含了最后一个时刻的输出 H 和 C；
         output_rnn,final_states = tf.nn.dynamic_rnn(cell, inputs_data,initial_state = init_state, dtype = tf.float32)
         
-        with tf.name_scope("outputs"):
-            #自定义输出层
-            output = tf.reshape(output_rnn,[-1,lstm_num_units]) 
-            w_out = self.weights['out']
-            bias_out = self.biases['out']
-            pred = tf.matmul(output, w_out) + bias_out
+        #自定义输出层
+        output = tf.reshape(output_rnn,[-1,lstm_num_units]) 
+        w_out = self.weights['out']
+        bias_out = self.biases['out']
+        pred = tf.matmul(output, w_out) + bias_out
     
         return pred,final_states
     
     #————————————————训练数据————————————————————
     
-    def train_lstm(self, iteration, batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
-        #定义命名空间，使用tensorboard进行可视化
-        with tf.name_scope("inputs"):
-            X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
-            tf.summary.histogram('X', X)
-
-        with tf.name_scope("target"):
-            Y = tf.placeholder(tf.float32, shape = [None,time_step,output_size])
-            tf.summary.histogram('Target', Y)
+    def train_lstm(self, batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
+        X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
+        Y = tf.placeholder(tf.float32, shape = [None,time_step,output_size])
     
         #获取训练数据
         batch_index,train_x,train_y = self.get_train_data(batch_size,time_step,train_begin,train_end)
@@ -180,36 +168,22 @@ class rnn_lstm:
             pred,_  =  self.lstm(X)
     
         #降维求均值
-        loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
+        loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1])- tf.reshape(Y, [-1])))
+    
         #Adm梯度优化算法
-        with tf.name_scope('train'):
-            train_op = tf.train.AdamOptimizer(lr).minimize(loss)
-            saver = tf.train.Saver(tf.global_variables(),max_to_keep = 15)
-   
-        with tf.name_scope("loss"):
-            tf.summary.scalar('Loss', loss)
-
-        summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('./log/', tf.get_default_graph())
-
-        summary_interval = 0;
-        if( iteration < summary_total):
-            summary_interval = 1
-        else:
-            summary_interval = iteration/summary_total;
-        print 'summary_interval=',summary_interval
+        train_op = tf.train.AdamOptimizer(lr).minimize(loss)
+        saver = tf.train.Saver(tf.global_variables(),max_to_keep = 15)
+    
         gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+        #with tf.Session() as sess:
             #初始化全局变量
             sess.run(tf.global_variables_initializer())
             #迭代次数，一般越大预测效果会更好
             for i in range(5000):  
                 for step in range(len(batch_index)-1):
-                    summary, _, loss_ = sess.run([summary_op, train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]], Y:train_y[batch_index[step]:batch_index[step+1]]})
+                    _, loss_ = sess.run([train_op,loss], feed_dict = {X:train_x[batch_index[step]:batch_index[step+1]], Y:train_y[batch_index[step]:batch_index[step+1]]})
                 print("Number of iterations:",i," loss:",loss_)
-                #写入tensorboard
-                if( i%summary_interval == 0):
-                    summary_writer.add_summary(summary, i);
             print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
             print("The train has finished")
     
@@ -260,29 +234,14 @@ class rnn_lstm:
             plt.show()
 
 if __name__ == "__main__":
-    #默认值
     data_file = 'stock_data.csv'
-    iteration = 5000
-    try:
-        options, args = opt.getopt(sys.argv[1:],"f:i:h", ["help","file=", "iteration="])
-        for name, value in options:
-            if name in ("-h", "--help"):
-                print './stock_predict_tb.py --file=data_file --iteration=5000'
-                sys.exit()
-            if name in ("-f", "--file"):
-                print 'data file = ', value
-                data_file = value
-            if name in ("-i", "--iteration"):
-                print 'data file = ', value
-                iteration = value
-    except opt.GetoptError:
-        sys.exit()
+    for i in range(1, len(sys.argv)):
+        data_file = argv[i];
+        break;
 
-    print 'iteration=',iteration
-    print 'data_file=',data_file
     lstm = rnn_lstm(data_file)
     #训练数据
-    lstm.train_lstm(iteration)
+    lstm.train_lstm()
     #预测数据
     lstm.eval_lstm()
 

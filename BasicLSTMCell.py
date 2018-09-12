@@ -18,11 +18,9 @@ init_state = cell.zero_state(batch_size, dtype = tf.float32)
 output, final_state = tf.nn.dynamic_rnn(cell, input, initial_state= init_state, dtype=tf.float32, time_major = True)
 
 #time_major = False
-inputs = tf.random_normal(shape = [time_step, lstm_num_units], dtype=tf.float32)
-inputs = tf.random_normal(shape = [batch_size,time_step, lstm_num_units], dtype=tf.float32)
-inputs2  =  tf.reshape(inputs, [-1, time_step, lstm_num_units] )
+inputs2  =  tf.reshape(input, [-1, time_step, lstm_num_units] )
 
-output2, final_state2 = tf.nn.dynamic_rnn(cell, inputs, initial_state= init_state, dtype=tf.float32, time_major = False)
+output2, final_state2 = tf.nn.dynamic_rnn(cell, inputs2, initial_state= init_state, dtype=tf.float32, time_major = False)
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer());
@@ -34,7 +32,6 @@ with tf.Session() as sess:
     print 'final_state = ', sess.run(final_state)
     
     print '-----------------time_major = False------------------'
-    print 'inputs shape = ', sess.run(tf.shape(inputs))
     print 'inputs2 shape = ', sess.run(tf.shape(inputs2))
     print 'output2 =',sess.run(output2)
     print '---------------------------'
