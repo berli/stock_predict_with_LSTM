@@ -137,7 +137,7 @@ class rnn_lstm:
         #num_units: 输出维度,图一中ht的维数，如果num_units=10,那么ht就是10维行向量, 官方解释:int, The number of units in the LSTM cell.
         #forget_bias：遗忘门的初始化偏置,默认是1.0，都不忘记, 0:都忘记
         #activation: 内部状态的激活函数,默认是: tanh.
-        cell = tf.nn.rnn_cell.BasicLSTMCell( lstm_num_units )
+        cell = tf.nn.rnn_cell.LSTMCell( num_units = lstm_num_units )
     
         #将 LSTM 中的状态初始化为全 0  数组，batch_size 给出一个 batch 的大小
         #返回[batch_size, 2*len(cells)],或者[batch_size, s]
