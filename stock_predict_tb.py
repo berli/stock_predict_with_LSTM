@@ -210,7 +210,20 @@ class rnn_lstm:
                 #写入tensorboard
                 if( i%summary_interval == 0):
                     summary_writer.add_summary(summary, i);
+
+                    print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
+                    #保存为Pb文件
+                    g = sess.graph
+                    # In my case, I use the default Graph
+                    gdef = g.as_graph_def()
+                    tf.train.write_graph(gdef,"model/","graph.pb",False)
+
             print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
+            #保存为Pb文件
+            g = sess.graph
+            # In my case, I use the default Graph
+            gdef = g.as_graph_def()
+            tf.train.write_graph(gdef,"model/","graph.pb",False)
             print("The train has finished")
     
     #————————————————预测数据————————————————————
