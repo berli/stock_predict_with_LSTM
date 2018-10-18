@@ -55,9 +55,9 @@ class rnn_lstm:
         np.std(data_train,axis = 0)每列的标准差
         '''
         normalized_train_data = (data_train-np.mean(data_train,axis = 0))/np.std(data_train,axis = 0)  
-        print "normalized_train_data:\n",normalized_train_data
+        print ("normalized_train_data:\n",normalized_train_data)
     
-        print "---------------------------------------------"
+        print ("---------------------------------------------")
         #训练集
         train_x,train_y = [],[]  
         c  =  0;
@@ -197,7 +197,7 @@ class rnn_lstm:
             summary_interval = 1
         else:
             summary_interval = iteration/summary_total;
-        print 'summary_interval=',summary_interval
+        print ('summary_interval=',summary_interval)
         gpu_options = tf.GPUOptions(allow_growth=True)
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
             #初始化全局变量
@@ -284,19 +284,19 @@ if __name__ == "__main__":
         options, args = opt.getopt(sys.argv[1:],"f:i:h", ["help","file=", "iteration="])
         for name, value in options:
             if name in ("-h", "--help"):
-                print './stock_predict_tb.py --file=data_file --iteration=5000'
+                print ('./stock_predict_tb.py --file=data_file --iteration=5000')
                 sys.exit()
             if name in ("-f", "--file"):
-                print 'data file = ', value
+                print ('data file = ', value)
                 data_file = value
             if name in ("-i", "--iteration"):
-                print 'data file = ', value
+                print ('data file = ', value)
                 iteration = value
     except opt.GetoptError:
         sys.exit()
 
-    print 'iteration=',iteration
-    print 'data_file=',data_file
+    print ('iteration=',iteration)
+    print ('data_file=',data_file)
     lstm = rnn_lstm(data_file)
     #训练数据
     lstm.train_lstm(iteration)
