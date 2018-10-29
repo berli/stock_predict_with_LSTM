@@ -179,7 +179,7 @@ class rnn_lstm:
         with tf.variable_scope("my_lstm"):
             pred,_  =  self.lstm(X)
     
-        #降维求均值
+        #定义损失函数：二次代价函数（均方误差（MSE:Mean Square Error ））
         loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
         #Adm梯度优化算法
         with tf.name_scope('train'):
