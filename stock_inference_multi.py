@@ -14,10 +14,6 @@ output_size = 1
 summary_total = 200
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_float('learning_rate', 0.0003, 'Initial learning rate.')
-lr = FLAGS.learning_rate
-tf.app.flags.DEFINE_integer('lstm_num_units', 10 ,'lstm units num ')
-lstm_num_units = FLAGS.lstm_num_units #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少 hidden_dim
 
 tf.app.flags.DEFINE_string("model_path", "model","the path for saving model")
 tf.app.flags.DEFINE_string("data_file", "","data file")
@@ -25,6 +21,10 @@ tf.app.flags.DEFINE_integer('iteration', 5000,'iteration for training')
 tf.app.flags.DEFINE_integer('summary_total', 200,'sample count for summary on tensorboard')
 tf.app.flags.DEFINE_float('keep_prob', 1, 'input keep prob')
 tf.app.flags.DEFINE_integer('lstm_layer_num', 2,'lstm layer num ')
+tf.app.flags.DEFINE_float('learning_rate', 0.0003, 'Initial learning rate.')
+lr = FLAGS.learning_rate
+tf.app.flags.DEFINE_integer('lstm_num_units', 10 ,'lstm units num ')
+lstm_num_units = FLAGS.lstm_num_units #LSTM每个单元中的单元数量，用来指有多少个隐藏层单元,同时也是输出维度的多少 hidden_dim
 
 class rnn_lstm:
     def __init__(self, data_file):
@@ -255,7 +255,7 @@ class rnn_lstm:
             print("The train has finished")
     
     #————————————————预测数据————————————————————
-    def eval_lstm(self, time_step = 20):
+    def inference_lstm(self, time_step = 20):
         X = tf.placeholder(tf.float32, shape = [None, time_step, input_size])
         mean, std, test_x, test_y = self.get_test_data( time_step )
         
@@ -315,7 +315,7 @@ def my_main(_):
     #训练数据
     lstm.train_lstm(FLAGS.iteration)
     #预测数据
-    lstm.eval_lstm()
+    lstm.inference_lstm()
 
 if __name__ == "__main__":
     tf.app.run(main = my_main)
