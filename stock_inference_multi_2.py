@@ -193,7 +193,6 @@ class rnn_lstm:
     #————————————————训练数据————————————————————
     
     def train_lstm(self, iteration, batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
-        global_step = tf.Variable(0, name='global_step', trainable=False)
         #定义命名空间，使用tensorboard进行可视化
         with tf.name_scope("inputs"):
             X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
@@ -213,7 +212,7 @@ class rnn_lstm:
         loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
         #Adm梯度优化算法
         with tf.name_scope('train'):
-            train_op = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
+            train_op = tf.train.AdamOptimizer(lr).minimize(loss)
             saver = tf.train.Saver(tf.global_variables(),max_to_keep = 15)
    
         with tf.name_scope("loss"):
@@ -228,47 +227,38 @@ class rnn_lstm:
         else:
             summary_interval = iteration/summary_total;
         print ('summary_interval=',summary_interval)
-        sess_config = tf.ConfigProto(
-            inter_op_parallelism_threads=1,
-            intra_op_parallelism_threads=12,
-            gpu_options = tf.GPUOptions(allow_growth=True), 
-            allow_soft_placement = True, 
-            log_device_placement = False)
-        with tf.train.MonitoredTrainingSession(
-                                checkpoint_dir=FLAGS.model_path+"/",
-                                config=sess_config,
-                                save_checkpoint_secs=60) as sess:
-        #with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        #    #继续训练，如果之前训练过
-        #    ckpt = tf.train.get_checkpoint_state('model/')
-        #    if ckpt and ckpt.model_checkpoint_path:
-        #        print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
-        #        saver.restore(sess, ckpt.model_checkpoint_path)
-        #    #初始化全局变量
-        #    sess.run(tf.global_variables_initializer())
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+            #继续训练，如果之前训练过
+            ckpt = tf.train.get_checkpoint_state('model/')
+            if ckpt and ckpt.model_checkpoint_path:
+                print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+                saver.restore(sess, ckpt.model_checkpoint_path)
+            #初始化全局变量
+            sess.run(tf.global_variables_initializer())
             #迭代次数，一般越大预测效果会更好
             for i in range(iteration):  
                 for step in range(len(batch_index)-1):
-                    step, _, loss_ = sess.run([global_step, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step]:batch_index[step+1] ]})
+                    summary, _, loss_ = sess.run([summary_op, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step]:batch_index[step+1] ]})
                 print("Number of iterations:",i," loss:",loss_)
                 #写入tensorboard
-                #if( i%summary_interval == 0):
-                #    summary_writer.add_summary(summary, i);
+                if( i%summary_interval == 0):
+                    summary_writer.add_summary(summary, i);
 
-                #    print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
-                #    #保存为Pb文件
-                #    g = sess.graph
-                #    # In my case, I use the default Graph
-                #    gdef = g.as_graph_def()
-                #    tf.train.write_graph(gdef,"model/","graph.pb",False)
+                    print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
+                    #保存为Pb文件
+                    g = sess.graph
+                    # In my case, I use the default Graph
+                    gdef = g.as_graph_def()
+                    tf.train.write_graph(gdef,"model/","graph.pb",False)
 
-            #print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
-            ##保存为Pb文件
-            #g = sess.graph
-            ## In my case, I use the default Graph
-            #gdef = g.as_graph_def()
-            #tf.train.write_graph(gdef,"model/","graph.pb",False)
-            #print("The train has finished")
+            print("model_save: ",saver.save(sess, 'model/modle.ckpt'))
+            #保存为Pb文件
+            g = sess.graph
+            # In my case, I use the default Graph
+            gdef = g.as_graph_def()
+            tf.train.write_graph(gdef,"model/","graph.pb",False)
+            print("The train has finished")
     
     #————————————————预测数据————————————————————
     def inference_lstm(self, time_step = 20):
