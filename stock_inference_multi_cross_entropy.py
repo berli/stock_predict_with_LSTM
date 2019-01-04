@@ -210,7 +210,10 @@ class rnn_lstm:
             pred,_  =  self.lstm(X)
     
         #定义损失函数：二次代价函数（均方误差（MSE:Mean Square Error ））
-        loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
+        loss = tf.reduce_mean( tf.square( tf.reshape(pred, [-1]) - tf.reshape(Y, [-1]) ) )
+        #loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
+        #    logits = tf.reshape(pred, [-1]) ,
+        #    labels =  tf.reshape(Y, [-1])) )
         #Adm梯度优化算法
         with tf.name_scope('train'):
             train_op = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
@@ -218,9 +221,6 @@ class rnn_lstm:
    
         with tf.name_scope("loss"):
             tf.summary.scalar('Loss', loss)
-
-        summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('./log/', tf.get_default_graph())
 
         summary_interval = 0;
         if( iteration < summary_total):
