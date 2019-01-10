@@ -193,6 +193,7 @@ class rnn_lstm:
     #————————————————训练数据————————————————————
     
     def train_lstm(self, iteration, batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
+
         global_step = tf.Variable(0, name='global_step', trainable=False)
         #定义命名空间，使用tensorboard进行可视化
         with tf.name_scope("inputs"):
@@ -239,8 +240,15 @@ class rnn_lstm:
                                 config=sess_config,
                                 save_checkpoint_secs=60) as sess:
             for i in range(iteration):  
-                for step in range(len(batch_index)-1):
+                #for step in range(len(batch_index)-1):
+                loss_ = 0
+                for step in range(len(batch_index)-2):
+                    #print( 'train_y[ batch_index[step]:batch_index[step+1] ]:',train_y[ batch_index[step]:batch_index[step+1] ])
+                    #print( 'train_y[ batch_index[step+1]:batch_index[step+2]]:',train_y[ batch_index[step+1]:batch_index[step+2]])
                     step, _, loss_ = sess.run([global_step, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step]:batch_index[step+1] ]})
+                    #if( len( train_y[ batch_index[step+1]:batch_index[step+2]]) != train_x[ batch_index[step]:batch_index[step+1] ]):
+                    #    continue;
+                    #step, _, loss_ = sess.run([global_step, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step+1]:batch_index[step+2] ]})
                 print("Number of iterations:",i," loss:",loss_)
     
     #————————————————预测数据————————————————————
