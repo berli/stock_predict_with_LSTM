@@ -28,5 +28,7 @@ predictions = tf.layers.Dense(10, activation='softmax')(x)
 
 # Instantiate the model given inputs and outputs.
 
+model = tf.keras.compile(loss = 'mse', optimizer='adam')
 model = tf.keras.Model(inputs=inputs, outputs=predictions)
+model = tf.keras.fit(x = input, y = input)
 print predictions
