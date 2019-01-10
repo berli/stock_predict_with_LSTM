@@ -6,7 +6,7 @@ import tensorflow as tf
 tf.enable_eager_execution()
 
 lstm_num_units = 10
-batch_size = 4
+batch_size = 3 
 time_step = 3
 
 input = tf.random_normal(shape=[time_step, batch_size, lstm_num_units], dtype=tf.float32)
@@ -28,7 +28,7 @@ predictions = tf.layers.Dense(10, activation='softmax')(x)
 
 # Instantiate the model given inputs and outputs.
 
-model = tf.keras.compile(loss = 'mse', optimizer='adam')
 model = tf.keras.Model(inputs=inputs, outputs=predictions)
-model = tf.keras.fit(x = input, y = input)
+model.compile(loss = 'mse', optimizer='adam')
+model = model.fit(x = input, y = input)
 print predictions
