@@ -23,4 +23,10 @@ cells = [
 inputs = tf.keras.Input((time_step, lstm_num_units))
 print inputs
 output = tf.keras.layers.RNN(cells)(inputs)
+x = tf.layers.Dense(64, activation='relu')(inputs)
+predictions = tf.layers.Dense(10, activation='softmax')(x)
 
+# Instantiate the model given inputs and outputs.
+
+model = tf.keras.Model(inputs=inputs, outputs=predictions)
+print predictions
