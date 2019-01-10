@@ -38,6 +38,7 @@ with tf.Session() as sess:
     print 'final_state2 shape = ', sess.run(tf.shape(final_state2))
     print 'final_state = ', sess.run(final_state2)
 
+tf.enable_eager_execution()
 cell  = tf.keras.layers.LSTMCell( lstm_num_units )
 
 #time_major = True
