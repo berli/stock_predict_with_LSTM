@@ -159,7 +159,7 @@ class rnn_lstm:
         def attn_cell():
             lstm_cell = tf.nn.rnn_cell.LSTMCell( num_units = lstm_num_units )
             with tf.name_scope('lstm_dropout'):
-                return tf.contrib.rnn.DropoutWrapper( lstm_cell, output_keep_prob = FLAGS.keep_prob)
+                return tf.nn.rnn_cell.DropoutWrapper( lstm_cell, output_keep_prob = FLAGS.keep_prob)
     
         enc_cells = []
         for i in range(FLAGS.lstm_layer_num):
