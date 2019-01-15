@@ -1,3 +1,10 @@
+<<<<<<< HEAD
 model_checkpoint_path: "model.ckpt-1"
 all_model_checkpoint_paths: "model.ckpt-0"
 all_model_checkpoint_paths: "model.ckpt-1"
+=======
+model_checkpoint_path: "model.ckpt-1480"
+all_model_checkpoint_paths: "model.ckpt-0"
+all_model_checkpoint_paths: "model.ckpt-710"
+all_model_checkpoint_paths: "model.ckpt-1480"
+>>>>>>> cff3726b96ffcd6f6c84cdffb331f526bdc7c57b

@@ -38,3 +38,30 @@ with tf.Session() as sess:
     print 'final_state2 shape = ', sess.run(tf.shape(final_state2))
     print 'final_state = ', sess.run(final_state2)
 
+tf.enable_eager_execution()
+cell  = tf.keras.layers.LSTMCell( lstm_num_units )
+
+#time_major = True
+#cell: BasicLSTMCell，BasicRNNCell，GRUCell 的对象实例，自己定义的cell 内容
+#inputs 如果是time_major=True，input的维度是[max_time, batch_size, input_size]，反之就是[batch_size,max_time, input_zise]，time_major 默认是False
+#output, final_state = tf.nn.dynamic_rnn(cell, input, initial_state= init_state, dtype=tf.float32, time_major = True)
+output = tf.keras.layers.RNN(cell)
+
+#time_major = False
+inputs2  =  tf.reshape(input, [-1, time_step, lstm_num_units] )
+
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer());
+    print '-----------------time_major = True------------------'
+    print 'output shape = ', sess.run(tf.shape(output))
+    print 'output =',sess.run(output)
+    print '---------------------------'
+    print 'final_state shape = ', sess.run(tf.shape(final_state))
+    print 'final_state = ', sess.run(final_state)
+    
+    print '-----------------time_major = False------------------'
+    print 'inputs2 shape = ', sess.run(tf.shape(inputs2))
+    print 'output2 =',sess.run(output2)
+    print '---------------------------'
+    print 'final_state2 shape = ', sess.run(tf.shape(final_state2))
+    print 'final_state = ', sess.run(final_state2)
