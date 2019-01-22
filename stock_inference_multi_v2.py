@@ -44,8 +44,8 @@ class rnn_lstm:
         #输入层、输出层, 权重、偏置
         with tf.name_scope("weights"):
             self.weights = {
-                 'in':tf.Variable(tf.random_normal([input_size, lstm_num_units])),
-                 'out':tf.Variable(tf.random_normal([lstm_num_units, 1]))
+                 'in':tf.Variable(tf.random.normal([input_size, lstm_num_units])),
+                 'out':tf.Variable(tf.random.normal([lstm_num_units, 1]))
                 }
             self.biases = {
                 'in':tf.Variable(tf.constant(0.1, shape = [lstm_num_units,])),
@@ -138,8 +138,8 @@ class rnn_lstm:
     def lstm(self, X):
         
         with tf.name_scope("weights"):
-            batch_size = tf.shape(X)[0]
-            time_step = tf.shape(X)[1]
+            batch_size = tf.shape(input=X)[0]
+            time_step = tf.shape(input=X)[1]
             w_in = self.weights['in']
             b_in = self.biases['in']
         
@@ -157,23 +157,21 @@ class rnn_lstm:
         #cell = tf.nn.rnn_cell.LSTMCell( num_units = lstm_num_units )
         #定义lstm cell和dropout层
         def attn_cell():
-            lstm_cell = tf.keras.layers.LSTMCell( units = lstm_num_units )
+            lstm_cell = tf.compat.v1.nn.rnn_cell.LSTMCell( num_units = lstm_num_units )
             with tf.name_scope('lstm_dropout'):
-                return tf.contrib.rnn.DropoutWrapper( lstm_cell, output_keep_prob = FLAGS.keep_prob)
-                #return tf.keras.layers.Dropout( lstm_cell, output_keep_prob = FLAGS.keep_prob)
+                return tf.compat.v1.nn.rnn_cell.DropoutWrapper( lstm_cell, output_keep_prob = FLAGS.keep_prob)
     
         enc_cells = []
         for i in range(FLAGS.lstm_layer_num):
             enc_cells.append( attn_cell() )
 
         with tf.name_scope('lstm_cell_layers'):
-            #mlstm_cell = tf.nn.rnn_cell.MultiRNNCell( enc_cells, state_is_tuple = True)
-            mlstm_cell = tf.keras.layers.StackedRNNCells( enc_cells)
+            mlstm_cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell( enc_cells, state_is_tuple = True)
 
         #将 LSTM 中的状态初始化为全 0  数组，batch_size 给出一个 batch 的大小
         #返回[batch_size, 2*len(cells)],或者[batch_size, s]
         #这个函数只是用来生成初始化值的
-        #init_state = mlstm_cell.zero_state(batch_size,dtype = tf.float32)
+        init_state = mlstm_cell.zero_state(batch_size,dtype = tf.float32)
     
         #https://www.tensorflow.org/api_docs/python/tf/nn/dynamic_rnn
         #cell: BasicLSTMCell，BasicRNNCell，GRUCell 的对象实例，自己定义的cell 内容
@@ -181,8 +179,7 @@ class rnn_lstm:
         #time_major 默认是False
         #return: output_rnn里面，包含了所有时刻的输出H
         #        final_states里面，包含了最后一个时刻的输出 H 和 C；
-        output_rnn,final_states = tf.nn.dynamic_rnn(mlstm_cell, inputs_data,initial_state = init_state, dtype = tf.float32)
-        #output_rnn,final_states = tf.keras.layers.RNN(mlstm_cell)
+        output_rnn,final_states = tf.compat.v1.nn.dynamic_rnn(mlstm_cell, inputs_data,initial_state = init_state, dtype = tf.float32)
         
         with tf.name_scope("outputs"):
             #自定义输出层
@@ -196,34 +193,35 @@ class rnn_lstm:
     #————————————————训练数据————————————————————
     
     def train_lstm(self, iteration, batch_size = 60,time_step = 20,train_begin = 0,train_end = 5800):
+
         global_step = tf.Variable(0, name='global_step', trainable=False)
         #定义命名空间，使用tensorboard进行可视化
         with tf.name_scope("inputs"):
-            X = tf.placeholder(tf.float32, shape = [None,time_step,input_size])
-            tf.summary.histogram('X', X)
+            X = tf.compat.v1.placeholder(tf.float32, shape = [None,time_step,input_size])
+            tf.compat.v1.summary.histogram('X', X)
 
         with tf.name_scope("target"):
-            Y = tf.placeholder(tf.float32, shape = [None,time_step,output_size])
-            tf.summary.histogram('Target', Y)
+            Y = tf.compat.v1.placeholder(tf.float32, shape = [None,time_step,output_size])
+            tf.compat.v1.summary.histogram('Target', Y)
     
         #获取训练数据
         batch_index,train_x,train_y = self.get_train_data(batch_size,time_step,train_begin,train_end)
     
-        with tf.variable_scope("my_lstm"):
+        with tf.compat.v1.variable_scope("my_lstm"):
             pred,_  =  self.lstm(X)
     
         #定义损失函数：二次代价函数（均方误差（MSE:Mean Square Error ））
-        loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
+        loss = tf.reduce_mean(input_tensor=tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
         #Adm梯度优化算法
         with tf.name_scope('train'):
-            train_op = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
-            saver = tf.train.Saver(tf.global_variables(),max_to_keep = 15)
+            train_op = tf.compat.v1.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
+            saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(),max_to_keep = 15)
    
         with tf.name_scope("loss"):
-            tf.summary.scalar('Loss', loss)
+            tf.compat.v1.summary.scalar('Loss', loss)
 
-        summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('./log/', tf.get_default_graph())
+        summary_op = tf.compat.v1.summary.merge_all()
+        summary_writer = tf.compat.v1.summary.FileWriter('./log/', tf.compat.v1.get_default_graph())
 
         summary_interval = 0;
         if( iteration < summary_total):
@@ -231,32 +229,39 @@ class rnn_lstm:
         else:
             summary_interval = iteration/summary_total;
         print ('summary_interval=',summary_interval)
-        sess_config = tf.ConfigProto(
+        sess_config = tf.compat.v1.ConfigProto(
             inter_op_parallelism_threads=1,
             intra_op_parallelism_threads=12,
-            gpu_options = tf.GPUOptions(allow_growth=True), 
+            gpu_options = tf.compat.v1.GPUOptions(allow_growth=True), 
             allow_soft_placement = True, 
             log_device_placement = False)
-        with tf.train.MonitoredTrainingSession(
+        with tf.compat.v1.train.MonitoredTrainingSession(
                                 checkpoint_dir=FLAGS.model_path+"/",
                                 config=sess_config,
                                 save_checkpoint_secs=60) as sess:
             for i in range(iteration):  
-                for step in range(len(batch_index)-1):
+                #for step in range(len(batch_index)-1):
+                loss_ = 0
+                for step in range(len(batch_index)-2):
+                    #print( 'train_y[ batch_index[step]:batch_index[step+1] ]:',train_y[ batch_index[step]:batch_index[step+1] ])
+                    #print( 'train_y[ batch_index[step+1]:batch_index[step+2]]:',train_y[ batch_index[step+1]:batch_index[step+2]])
                     step, _, loss_ = sess.run([global_step, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step]:batch_index[step+1] ]})
+                    #if( len( train_y[ batch_index[step+1]:batch_index[step+2]]) != train_x[ batch_index[step]:batch_index[step+1] ]):
+                    #    continue;
+                    #step, _, loss_ = sess.run([global_step, train_op,loss], feed_dict = {X:train_x[ batch_index[step]:batch_index[step+1] ], Y:train_y[ batch_index[step+1]:batch_index[step+2] ]})
                 print("Number of iterations:",i," loss:",loss_)
     
     #————————————————预测数据————————————————————
     def inference_lstm(self, time_step = 20):
-        X = tf.placeholder(tf.float32, shape = [None, time_step, input_size])
+        X = tf.compat.v1.placeholder(tf.float32, shape = [None, time_step, input_size])
         mean, std, test_x, test_y,padding = self.get_test_data( time_step )
         
         #共享lstm()函数中定义的权重参数
-        with tf.variable_scope("my_lstm", reuse = tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope("my_lstm", reuse = tf.compat.v1.AUTO_REUSE):
             pred, _ = self.lstm(X)
     
-        saver = tf.train.Saver( tf.global_variables() )
-        with tf.Session() as sess:
+        saver = tf.compat.v1.train.Saver( tf.compat.v1.global_variables() )
+        with tf.compat.v1.Session() as sess:
             #读取刚才训练好的模型参数
             module_file  =  tf.train.latest_checkpoint('model')
             saver.restore(sess, module_file)
@@ -311,5 +316,5 @@ def my_main(_):
     lstm.inference_lstm()
 
 if __name__ == "__main__":
-    tf.app.run(main = my_main)
+    tf.compat.v1.app.run(main = my_main)
 
